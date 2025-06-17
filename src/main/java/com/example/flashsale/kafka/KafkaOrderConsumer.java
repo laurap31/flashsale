@@ -20,19 +20,26 @@ public class KafkaOrderConsumer {
 
     @KafkaListener(topics = "flashsale-order", groupId = "flashsale")
     public void consumeOrder(ConsumerRecord<String, String> record) throws Exception {
-        // 反序列化 JSON
+        // Step 1: 反序列化 JSON
         OrderMessage msg = objectMapper.readValue(record.value(), OrderMessage.class);
-        // 新增訂單（這裡可以再檢查一次庫存）
+
+        // Step 2: 重複搶購校驗
+        boolean exists = orderRepository.existsByUserIdAndProductId(msg.getUserId(), msg.getProductId());
+        if (exists) {
+            // 已經下單過，不重複入庫
+            return;
+        }
+
+        // Step 3: 建立訂單（入庫 MySQL）
         FlashOrder order = FlashOrder.builder()
                 .userId(msg.getUserId())
                 .productId(msg.getProductId())
                 .createTime(LocalDateTime.now())
                 .build();
         orderRepository.save(order);
-        // 併發扣庫存這裡可做二次檢查
     }
 
-    // DTO for message
+    // DTO for Kafka Message
     @Data
     public static class OrderMessage {
         private Long userId;
