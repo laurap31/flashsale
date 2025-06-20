@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class FlashSaleController {
 
-    private final ProductRepository productRepository;
     private final OrderService orderService;
     private final UserService userService;
 
